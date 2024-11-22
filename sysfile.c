@@ -15,7 +15,40 @@
 #include "sleeplock.h"
 #include "file.h"
 #include "fcntl.h"
+
+//variables pour le projet
 int readcount=0;
+char tracepathname[256];
+int traceenabled = 0;
+int tracecount = 0;
+
+int
+sys_getreadcount(void)
+{
+  cprintf("sys_getreadcount called: %d\n", readcount);
+  return readcount;
+}
+int sys_trace(void) {
+    char *pathname;
+    if (argstr(0, &pathname) < 0)  // Récupère l'argument du syscall
+        return -1;
+
+    strncpy(tracepathname, pathname, sizeof(tracepathname));
+    tracepathname[sizeof(tracepathname) - 1] = '\0';  // Assure la terminaison
+    tracecount = 0;  // Réinitialise le compteur
+    traceenabled = 1;  // Active le traçage
+
+    return 0;  // Succès
+}
+int sys_gettracecount(void) {
+    if (!traceenabled)  // Vérifie si le traçage est activé
+        return -1;
+
+    return tracecount;
+}
+
+
+
 // Fetch the nth word-sized system call argument as a file descriptor
 // and return both the descriptor and the corresponding struct file.
 static int
@@ -65,12 +98,8 @@ sys_dup(void)
   filedup(f);
   return fd;
 }
-int
-sys_getreadcount(void)
-    {
-  cprintf("sys_getreadcount called: %d\n", readcount);
-  return readcount;
-    }
+
+
 int
 sys_read(void)
 {
@@ -335,6 +364,9 @@ sys_open(void)
   f->off = 0;
   f->readable = !(omode & O_WRONLY);
   f->writable = (omode & O_WRONLY) || (omode & O_RDWR);
+  if (traceenabled) {
+    tracecount++;
+	}
   return fd;
 }
 

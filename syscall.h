@@ -21,3 +21,5 @@
 #define SYS_mkdir  20
 #define SYS_close  21
 #define SYS_getreadcount 22
+#define SYSCALL_ENUM_VALUE_TRACE 23
+#define SYSCALL_ENUM_VALUE_GETTRACECOUNT 24

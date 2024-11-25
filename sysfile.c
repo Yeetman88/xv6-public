@@ -20,6 +20,41 @@ int
 sys_getreadcount(void) {
   return readcount;
 }
+int tracecount = 0;
+int traceenabled = 0;
+char tracepathname[256];
+int
+sys_trace(void)
+{
+    char *pathname;
+    int n;
+
+    // Récupérer le pointeur vers le nom du fichier depuis la pile des arguments
+    if (argstr(0, &pathname) < 0)
+        return -1;
+
+    // Vérifier la longueur du nom de fichier
+    n = strlen(pathname);
+    if (n >= 256)
+        return -1;
+
+    // Copier le nom du fichier dans tracepathname
+    safestrcpy(tracepathname, pathname, sizeof(tracepathname));
+
+    // Réinitialiser le compteur et activer le traçage
+    tracecount = 0;
+    traceenabled = 1;
+
+    return 0;
+}
+int
+sys_gettracecount(void)
+{
+    return tracecount;
+}
+
+
+
 // Fetch the nth word-sized system call argument as a file descriptor
 // and return both the descriptor and the corresponding struct file.
 static int
@@ -296,7 +331,9 @@ sys_open(void)
 
   if(argstr(0, &path) < 0 || argint(1, &omode) < 0)
     return -1;
-
+if(traceenabled && strncmp(path, tracepathname, strlen(tracepathname)) == 0){
+        tracecount++;
+    }
   begin_op();
 
   if(omode & O_CREATE){
